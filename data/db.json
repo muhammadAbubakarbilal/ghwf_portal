@@ -1,0 +1,214 @@
+{
+  "users": [
+    {
+      "id": "usr_super",
+      "email": "superadmin@ghwf.org",
+      "full_name": "Super Admin",
+      "role": "super_admin",
+      "is_active": true,
+      "created_at": "2026-06-18T08:00:28.094Z"
+    },
+    {
+      "id": "usr_manager",
+      "email": "manager@ghwf.org",
+      "full_name": "Managing Admin",
+      "role": "managing_admin",
+      "is_active": true,
+      "created_at": "2026-06-18T08:00:28.094Z"
+    },
+    {
+      "id": "usr_exporter",
+      "email": "exporter@ghwf.org",
+      "full_name": "Download Admin",
+      "role": "download_admin",
+      "is_active": true,
+      "created_at": "2026-06-18T08:00:28.094Z"
+    },
+    {
+      "id": "usr_std_1",
+      "email": "ali@example.com",
+      "full_name": "Muhammad Ali Gakkhar",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-06-16T08:00:28.094Z"
+    },
+    {
+      "id": "usr_std_2",
+      "email": "ayesha@example.com",
+      "full_name": "Ayesha Bibi",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-06-18T06:00:28.094Z"
+    },
+    {
+      "id": "usr_std_3",
+      "email": "zainab@example.com",
+      "full_name": "Zainab Tariq",
+      "role": "student",
+      "is_active": true,
+      "created_at": "2026-06-18T08:00:28.094Z"
+    },
+    {
+      "email": "abgakhar787@gmail.com",
+      "full_name": "Muhammad Abu bakar",
+      "role": "student",
+      "id": "usr_wwqwcljpr",
+      "is_active": true,
+      "created_at": "2026-06-18T08:03:55.092Z"
+    }
+  ],
+  "passwords": {
+    "usr_super": "admin123",
+    "usr_manager": "password123",
+    "usr_exporter": "password123",
+    "usr_std_1": "password123",
+    "usr_std_2": "password123",
+    "usr_std_3": "password123",
+    "usr_wwqwcljpr": "123456789"
+  },
+  "students": [
+    {
+      "id": "std_1",
+      "user_id": "usr_std_1",
+      "registration_number": "GHWF-2026-0001",
+      "academic_year": 2026,
+      "full_name": "Muhammad Ali Gakkhar",
+      "gender": "male",
+      "father_name": "Tariq Ali",
+      "age": 14,
+      "class_name": "8th Grade",
+      "text_class": "8th",
+      "guardian_cnic": "37405-1234567-1",
+      "guardian_mobile": "03001234567",
+      "teacher_contact": "03129876543",
+      "school_name": "Government High School No. 1 Gakkhar",
+      "referred_by_name": "Malik Muhammad Anwar",
+      "referred_by_mobile": "03215551234",
+      "address_district_village": "Gakkhar House, Ward No. 4, Jhelum District",
+      "additional_info": "Talented student, highly interested in science subjects.",
+      "submitted_at": "2026-06-16T08:00:28.094Z",
+      "last_edited_at": "2026-06-16T08:00:28.094Z",
+      "edit_locked": true,
+      "downloaded_by_student": false,
+      "created_at": "2026-06-16T08:00:28.094Z"
+    },
+    {
+      "id": "std_2",
+      "user_id": "usr_std_2",
+      "registration_number": "GHWF-2026-0002",
+      "academic_year": 2026,
+      "full_name": "Ayesha Bibi",
+      "gender": "female",
+      "father_name": "Abdur Rahman",
+      "age": 11,
+      "class_name": "6th Grade",
+      "text_class": "6th",
+      "guardian_cnic": "37405-7654321-2",
+      "guardian_mobile": "03339876543",
+      "teacher_contact": "03451112223",
+      "school_name": "Government Girls High School Gakkhar",
+      "referred_by_name": "Chaudhry Asghar",
+      "referred_by_mobile": "03009998888",
+      "address_district_village": "Gaman Kota, Rawalpindi District",
+      "additional_info": "Deserving child, certified by Union Council.",
+      "submitted_at": "2026-06-18T06:00:28.094Z",
+      "last_edited_at": "2026-06-18T06:30:28.094Z",
+      "edit_locked": false,
+      "downloaded_by_student": false,
+      "created_at": "2026-06-18T06:00:28.094Z"
+    },
+    {
+      "id": "std_3",
+      "user_id": "usr_std_3",
+      "registration_number": "GHWF-2026-0003",
+      "academic_year": 2026,
+      "full_name": "Zainab Tariq",
+      "gender": "female",
+      "father_name": "Muhammad Tariq Javid",
+      "age": 16,
+      "class_name": "10th Grade",
+      "text_class": "10th",
+      "guardian_cnic": "37408-9999999-9",
+      "guardian_mobile": "03445556667",
+      "teacher_contact": "03211234567",
+      "school_name": "Public Model School Jhelum",
+      "referred_by_name": "Raja Tufail",
+      "referred_by_mobile": "03159988776",
+      "address_district_village": "Pind Dadan Khan, Jhelum District",
+      "additional_info": "Position holder in annual exams.",
+      "submitted_at": "2026-06-18T08:00:28.094Z",
+      "last_edited_at": "2026-06-18T08:00:28.094Z",
+      "edit_locked": false,
+      "downloaded_by_student": true,
+      "created_at": "2026-06-18T08:00:28.094Z"
+    }
+  ],
+  "settings": {
+    "download_window_start": "2026-06-01",
+    "download_window_end": "2026-08-31",
+    "current_academic_year": 2026
+  },
+  "audit_logs": [
+    {
+      "id": "log_e5e29e515",
+      "actor_id": "usr_super",
+      "actor_name": "Super Admin",
+      "action": "UPDATE_USER",
+      "target_id": null,
+      "target_name": null,
+      "metadata": {
+        "target_id": "usr_manager",
+        "updates": {
+          "is_active": true
+        }
+      },
+      "created_at": "2026-06-18T22:23:06.114681"
+    },
+    {
+      "id": "log_ec03724e7",
+      "actor_id": "usr_super",
+      "actor_name": "Super Admin",
+      "action": "UPDATE_USER",
+      "target_id": null,
+      "target_name": null,
+      "metadata": {
+        "target_id": "usr_manager",
+        "updates": {
+          "is_active": false
+        }
+      },
+      "created_at": "2026-06-18T22:23:04.328062"
+    },
+    {
+      "id": "log_1",
+      "actor_id": "usr_exporter",
+      "actor_name": "Download Admin",
+      "action": "EXPORT_EXCEL",
+      "metadata": {
+        "count": 3,
+        "filters": {
+          "academic_year": 2026
+        }
+      },
+      "created_at": "2026-06-17T08:00:28.094Z"
+    },
+    {
+      "id": "log_2",
+      "actor_id": "usr_super",
+      "actor_name": "Super Admin",
+      "action": "SETTINGS_UPDATE",
+      "metadata": {
+        "updated_keys": [
+          "download_window_start",
+          "download_window_end"
+        ]
+      },
+      "created_at": "2026-06-13T08:00:28.094Z"
+    }
+  ],
+  "token_blacklist": [
+    "jti_m26ju0okh",
+    "42a235c9-c244-4c66-b4be-e59aa319d8f1"
+  ],
+  "registration_sequence": 3
+}
