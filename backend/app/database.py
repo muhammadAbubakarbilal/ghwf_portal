@@ -4,7 +4,6 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .config import load_env_file
 from sqlalchemy import (
     Boolean,
     Date,
@@ -15,22 +14,43 @@ from sqlalchemy import (
     String,
     create_engine,
     select,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
 
-load_env_file()
-
 from .schemas import Gender, UserRole
 
-BASE_DIR = Path(__file__).resolve().parents[1]
-DATA_DIR = BASE_DIR / 'data'
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-DEFAULT_SQLITE_URL = f"sqlite:///{(DATA_DIR / 'ghwf.db').as_posix()}"
-DATABASE_URL = os.environ.get('DATABASE_URL', DEFAULT_SQLITE_URL)
+# ---------------------------------------------------------------------------
+# Database URL — resolved lazily so nothing runs at import time on Vercel
+# ---------------------------------------------------------------------------
 
-engine = create_engine(DATABASE_URL, future=True)
-SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, future=True)
+def _get_database_url() -> str:
+    url = os.environ.get('DATABASE_URL', '')
+    if not url:
+        # Fallback to SQLite only in local dev (no DATABASE_URL set)
+        base_dir = Path(__file__).resolve().parents[1]
+        data_dir = base_dir / 'data'
+        data_dir.mkdir(parents=True, exist_ok=True)
+        url = f"sqlite:///{(data_dir / 'ghwf.db').as_posix()}"
+    return url
 
+
+def _build_engine():
+    url = _get_database_url()
+    kwargs: Dict[str, Any] = {'future': True}
+    if url.startswith('postgresql'):
+        # Neon requires SSL; pool_pre_ping keeps connections alive across
+        # Vercel's serverless cold-starts.
+        kwargs['connect_args'] = {'sslmode': 'require'}
+        kwargs['pool_pre_ping'] = True
+        kwargs['pool_size'] = 5
+        kwargs['max_overflow'] = 2
+    return create_engine(url, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# ORM models
+# ---------------------------------------------------------------------------
 
 class Base(DeclarativeBase):
     pass
@@ -121,18 +141,27 @@ class BlacklistedTokenModel(Base):
     blacklisted_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
 def _iso(value: Optional[datetime]) -> Optional[str]:
     return value.isoformat() if value else None
 
 
+# ---------------------------------------------------------------------------
+# Database class — fully lazy, nothing runs until first method call
+# ---------------------------------------------------------------------------
+
 class Database:
     def __init__(self) -> None:
-        Base.metadata.create_all(engine)
-        self.SessionLocal = SessionLocal
+        self._engine = _build_engine()
+        self._SessionLocal = sessionmaker(bind=self._engine, expire_on_commit=False, future=True)
+        Base.metadata.create_all(self._engine)
         self._seed_defaults()
 
     def _seed_defaults(self) -> None:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             if not session.scalar(select(SettingModel)):
                 session.add(SettingModel(
                     id=1,
@@ -209,27 +238,27 @@ class Database:
         }
 
     def get_users(self) -> List[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             return [self._row_to_user(row) for row in session.scalars(select(UserModel)).all()]
 
     def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             row = session.get(UserModel, user_id)
             return self._row_to_user(row) if row else None
 
     def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             row = session.scalar(select(UserModel).where(UserModel.email == email.strip().lower()))
             return self._row_to_user(row) if row else None
 
     def get_user_password(self, user_id: str) -> Optional[str]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             row = session.get(PasswordModel, user_id)
             return row.password if row else None
 
     def create_user(self, email: str, full_name: str, role: UserRole, password: str, user_id: Optional[str] = None) -> Dict[str, Any]:
         user_id = user_id or f'usr_{uuid.uuid4().hex[:9]}'
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             user = UserModel(
                 id=user_id,
                 email=email.strip().lower(),
@@ -244,7 +273,7 @@ class Database:
             return self._row_to_user(user)
 
     def update_user(self, user_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             user = session.get(UserModel, user_id)
             if not user:
                 return None
@@ -260,21 +289,21 @@ class Database:
             return self._row_to_user(user)
 
     def get_students(self) -> List[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             return [self._row_to_student(row) for row in session.scalars(select(StudentFormModel)).all()]
 
     def get_student_by_id(self, student_id: str) -> Optional[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             row = session.get(StudentFormModel, student_id)
             return self._row_to_student(row) if row else None
 
     def get_student_by_user_id(self, user_id: str) -> Optional[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             row = session.scalar(select(StudentFormModel).where(StudentFormModel.user_id == user_id))
             return self._row_to_student(row) if row else None
 
     def generate_registration_number(self, year: int) -> str:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             settings = session.get(SettingModel, 1)
             settings.registration_sequence += 1
             session.commit()
@@ -283,7 +312,7 @@ class Database:
     def submit_student_form(self, user_id: str, form_data: Dict[str, Any]) -> Dict[str, Any]:
         if self.get_student_by_user_id(user_id):
             raise ValueError('Form already submitted for this user')
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             settings = session.get(SettingModel, 1)
             registration_number = self.generate_registration_number(settings.current_academic_year)
             form = StudentFormModel(
@@ -315,7 +344,7 @@ class Database:
             return self._row_to_student(form)
 
     def update_student_form(self, user_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             student = session.scalar(select(StudentFormModel).where(StudentFormModel.user_id == user_id))
             if not student:
                 return None
@@ -329,7 +358,7 @@ class Database:
             return self._row_to_student(student)
 
     def set_student_downloaded(self, user_id: str, downloaded: bool) -> Optional[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             student = session.scalar(select(StudentFormModel).where(StudentFormModel.user_id == user_id))
             if not student:
                 return None
@@ -338,7 +367,7 @@ class Database:
             return self._row_to_student(student)
 
     def verify_and_lock_old_submissions(self) -> int:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             locked_count = 0
             for student in session.scalars(select(StudentFormModel).where(StudentFormModel.edit_locked == False)).all():
                 if student.submitted_at and datetime.utcnow() - student.submitted_at > timedelta(hours=24):
@@ -349,7 +378,7 @@ class Database:
             return locked_count
 
     def get_settings(self) -> Dict[str, Any]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             settings = session.get(SettingModel, 1)
             return {
                 'download_window_start': settings.download_window_start.isoformat(),
@@ -358,7 +387,7 @@ class Database:
             }
 
     def update_settings(self, updates: Dict[str, Any]) -> Dict[str, Any]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             settings = session.get(SettingModel, 1)
             if updates.get('download_window_start'):
                 settings.download_window_start = date.fromisoformat(updates['download_window_start'])
@@ -372,17 +401,17 @@ class Database:
             return self.get_settings()
 
     def reset_sequence(self) -> None:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             settings = session.get(SettingModel, 1)
             settings.registration_sequence = 0
             session.commit()
 
     def get_audit_logs(self) -> List[Dict[str, Any]]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             return [self._row_to_audit_log(row) for row in session.scalars(select(AuditLogModel).order_by(AuditLogModel.created_at.desc())).all()]
 
     def add_audit_log(self, actor_id: str, action: str, metadata: Dict[str, Any], target_id: Optional[str] = None, target_name: Optional[str] = None) -> Dict[str, Any]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             actor = session.get(UserModel, actor_id)
             new_log = AuditLogModel(
                 id=f'log_{uuid.uuid4().hex[:9]}',
@@ -399,14 +428,34 @@ class Database:
             return self._row_to_audit_log(new_log)
 
     def get_blacklisted_tokens(self) -> List[str]:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             return [row.jti for row in session.scalars(select(BlacklistedTokenModel)).all()]
 
     def blacklist_token(self, jti: str) -> None:
-        with self.SessionLocal() as session:
+        with self._SessionLocal() as session:
             if not session.get(BlacklistedTokenModel, jti):
                 session.add(BlacklistedTokenModel(jti=jti, blacklisted_at=datetime.utcnow()))
                 session.commit()
 
 
-db = Database()
+# ---------------------------------------------------------------------------
+# Lazy singleton — Database() is only constructed on first request
+# ---------------------------------------------------------------------------
+
+_db_instance: Optional[Database] = None
+
+
+def get_db() -> Database:
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = Database()
+    return _db_instance
+
+
+class _LazyDB:
+    """Proxy that initialises the real Database on first attribute access."""
+    def __getattr__(self, name: str):  # type: ignore[override]
+        return getattr(get_db(), name)
+
+
+db = _LazyDB()
