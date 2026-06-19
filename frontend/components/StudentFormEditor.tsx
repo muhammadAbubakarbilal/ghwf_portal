@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { StudentForm, Gender } from '../types';
 import { Save, Lock, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 interface StudentFormEditorProps {
   form: StudentForm | null;
@@ -317,7 +318,7 @@ export const StudentFormEditor: React.FC<StudentFormEditorProps> = ({ form, stat
     const isNew = !form;
 
     try {
-      const response = await fetch('/api/v1/student/form', {
+      const response = await fetch(apiUrl('/api/v1/student/form'), {
         method: isNew ? 'POST' : 'PATCH',
         headers: {
           'Content-Type': 'application/json',

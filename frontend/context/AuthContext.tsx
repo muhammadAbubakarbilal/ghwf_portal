@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthResponse } from '../types';
+import { apiUrl } from '../lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -69,8 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchProfile = async (authToken: string, silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const response = await fetch('/api/v1/auth/me', {
-        headers: { Authorization: `Bearer ${authToken}` }
+      const response = await fetch(apiUrl('/api/v1/auth/me'), {
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       if (response.ok) {
         const data = await response.json();
@@ -98,14 +99,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<User> => {
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/auth/login', {
+      const response = await fetch(apiUrl('/api/v1/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed. Please check your credentials.');
+        throw new Error(data.detail || data.error || 'Login failed. Please check your credentials.');
       }
       localStorage.setItem('ghwf_token', data.token);
       localStorage.setItem('ghwf_user', JSON.stringify(data.user));
@@ -120,14 +121,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, fullName: string): Promise<User> => {
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/auth/register', {
+      const response = await fetch(apiUrl('/api/v1/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: fullName })
+        body: JSON.stringify({ email, password, full_name: fullName }),
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create student account.');
+        throw new Error(data.detail || data.error || 'Failed to create student account.');
       }
       localStorage.setItem('ghwf_token', data.token);
       localStorage.setItem('ghwf_user', JSON.stringify(data.user));
@@ -143,9 +144,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       if (token) {
-        await fetch('/api/v1/auth/logout', {
+        await fetch(apiUrl('/api/v1/auth/logout'), {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
       }
     } catch (e) {

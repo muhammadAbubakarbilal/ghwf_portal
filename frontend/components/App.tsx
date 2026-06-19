@@ -11,6 +11,7 @@ import { StudentFormEditor } from './StudentFormEditor';
 import { DashboardStats } from './DashboardStats';
 import { AuditLogTable } from './AuditLogTable';
 import { Users, Lock, FileText, CheckCircle2, AlertTriangle, Printer, DownloadCloud, Calendar, RotateCcw, Plus, Trash2, ShieldAlert, Sliders, ToggleLeft, ToggleRight, Eye, RefreshCw, Filter, Search, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 function MainAppContent() {
   const { user, token, loading, login, register, logout } = useAuth();
@@ -129,12 +130,12 @@ function MainAppContent() {
   const loadStudentData = async () => {
     if (!token) return;
     try {
-      const formRes = await fetch('/api/v1/student/form', { headers: { Authorization: `Bearer ${token}` } });
+      const formRes = await fetch(apiUrl('/api/v1/student/form'), { headers: { Authorization: `Bearer ${token}` } });
       if (formRes.ok) {
         const formData = await formRes.json();
         setStudentForm(formData.form);
       }
-      const statusRes = await fetch('/api/v1/student/form/status', { headers: { Authorization: `Bearer ${token}` } });
+      const statusRes = await fetch(apiUrl('/api/v1/student/form/status'), { headers: { Authorization: `Bearer ${token}` } });
       if (statusRes.ok) {
         const statusData = await statusRes.json();
         setStudentFormStatus(statusData);
@@ -147,7 +148,7 @@ function MainAppContent() {
   const loadSystemSettings = async () => {
     if (!token) return;
     try {
-      const res = await fetch('/api/v1/settings', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl('/api/v1/settings'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setSystemSettings(data.settings);
@@ -163,7 +164,7 @@ function MainAppContent() {
   const loadAdminStats = async () => {
     if (!token) return;
     try {
-      const res = await fetch('/api/v1/admin/stats', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl('/api/v1/admin/stats'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setAdminStats(data);
@@ -177,7 +178,7 @@ function MainAppContent() {
     if (!token) return;
     try {
       const queryParams = new URLSearchParams({ page: String(page), search: searchQuery, year: filterYear, class_name: filterClass, school_name: filterSchool, district: filterDistrict });
-      const res = await fetch(`/api/v1/admin/students?${queryParams.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl(`/api/v1/admin/students?${queryParams.toString()}`), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setStudentsList(data.students);
@@ -192,7 +193,7 @@ function MainAppContent() {
   const loadAuditHistory = async () => {
     if (!token) return;
     try {
-      const res = await fetch('/api/v1/export/logs', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl('/api/v1/export/logs'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setAuditLogs(data.logs);
@@ -205,7 +206,7 @@ function MainAppContent() {
   const loadUserManagement = async () => {
     if (!token) return;
     try {
-      const res = await fetch('/api/v1/super-admin/users', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl('/api/v1/super-admin/users'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setUsersList(data.users);
@@ -247,7 +248,7 @@ function MainAppContent() {
   const triggerSelfDownload = async () => {
     if (!token || !studentForm) return;
     try {
-      const res = await fetch('/api/v1/student/form/download', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl('/api/v1/student/form/download'), { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || 'The download action could not be initialized.');
@@ -265,7 +266,7 @@ function MainAppContent() {
     if (!token) return;
     const queryParams = new URLSearchParams({ search: searchQuery, year: filterYear, class_name: filterClass, school_name: filterSchool, district: filterDistrict });
     try {
-      const response = await fetch(`/api/v1/export/excel?${queryParams.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(apiUrl(`/api/v1/export/excel?${queryParams.toString()}`), { headers: { Authorization: `Bearer ${token}` } });
       if (!response.ok) {
         const err = await response.json();
         alert(err.error || 'Excel export failed.');
@@ -290,7 +291,7 @@ function MainAppContent() {
     setSettingsError(null);
     setSettingsSuccess(null);
     try {
-      const res = await fetch('/api/v1/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ download_window_start: configStart, download_window_end: configEnd, current_academic_year: parseInt(configYear) }) });
+      const res = await fetch(apiUrl('/api/v1/settings'), { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ download_window_start: configStart, download_window_end: configEnd, current_academic_year: parseInt(configYear) }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update settings.');
       setSettingsSuccess('Portal configurations successfully updated and saved.');
@@ -304,7 +305,7 @@ function MainAppContent() {
     const confirmReset = window.confirm('Are you sure you want to reset the registration sequence number back to zero? New registrations will start from GHWF-YEAR-0001.');
     if (!confirmReset) return;
     try {
-      const res = await fetch('/api/v1/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ reset_sequence: true }) });
+      const res = await fetch(apiUrl('/api/v1/settings'), { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ reset_sequence: true }) });
       if (res.ok) alert('Registration number sequence has been successfully reset.');
     } catch (e) {
       alert('Process failed.');
@@ -320,7 +321,7 @@ function MainAppContent() {
       return;
     }
     try {
-      const res = await fetch('/api/v1/super-admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email: newAdminEmail, password: newAdminPass, full_name: newAdminName, role: newAdminRole }) });
+      const res = await fetch(apiUrl('/api/v1/super-admin/users'), { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email: newAdminEmail, password: newAdminPass, full_name: newAdminName, role: newAdminRole }) });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Admin creation failed.');
@@ -337,7 +338,7 @@ function MainAppContent() {
 
   const toggleUserActive = async (targetId: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`/api/v1/super-admin/users/${targetId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ is_active: !currentStatus }) });
+      const res = await fetch(apiUrl(`/api/v1/super-admin/users/${targetId}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ is_active: !currentStatus }) });
       if (res.ok) loadUserManagement();
     } catch (e) {
       alert('Failed to update blocking status.');
