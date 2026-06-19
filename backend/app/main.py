@@ -20,9 +20,22 @@ app = FastAPI(
     version='1.0.0'
 )
 
+import os
+
+_cors_origins_env = os.environ.get('CORS_ORIGINS', '')
+_extra_origins = [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
+_allow_origins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
+    'https://ghwf-portal.vercel.app',  # production frontend
+] + _extra_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001'],
+    allow_origins=_allow_origins,
+    allow_origin_regex=r'https://ghwf-portal.*\.vercel\.app',
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
